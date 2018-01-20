@@ -9,14 +9,20 @@
 <script src="{% static "js/jquery.js" %}"></script>
 </head>
 <body>
-<h1>Happy cat says...</h1>
+<h1>Rango says...</h1>
 <div>
-Happy cat says here is the about page.<br /><strong>{{ boldmessage }}</strong><br />
+Rango says here is the about page.<br /><strong>{{ boldmessage }}</strong><br />
 </div>
 <div>
+This tutorial has been put
+together by 2274277-Imam Reiza Fahlevi.
+</div> <br/>
+<div>
 <a href="/rango/">Rango</a><br />
-<<img
-src="{{ MEDIA_URL}}cat.jpg" alt="Picture of Happy Cat" /> <!-- New line -->
+<img src="{{ MEDIA_URL}}cat.jpg" alt="Picture of Happy Cat" /> <br />
+
+<img src="{% static "images/rango.jpg" %}"
+			alt="Picture of Rango" />
 </div>
 </body>
 </html>
