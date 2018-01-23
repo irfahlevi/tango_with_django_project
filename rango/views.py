@@ -1,14 +1,9 @@
 from django.shortcuts import render
-# Import the category model
 from rango.models import Category
-# Import the page model
 from rango.models import Page
-
 #chap7
-#from rango.forms import CategoryForm
-
-#chap7
-#from rango.forms import PageForm
+from rango.forms import CategoryForm
+from rango.forms import PageForm
 
 
 
@@ -91,8 +86,7 @@ def show_category(request, category_name_slug):
 # Go render the response and return it to the client.
 	return render(request, 'rango/category.html', context_dict)
 
-	#chapter 6
-
+#chapter 6
 def show_page(request, slug):
 	
 	context_dict = {}
@@ -112,31 +106,28 @@ def show_page(request, slug):
 
 
 # chapter 7
-
-
-
 def add_category(request):
-    form = CategoryForm()
-    # A HTTP POST?
-    if request.method == 'POST':
-        form = CategoryForm(request.POST)
-        # Have we been provided with a valid form?
-        if form.is_valid():
-            # Save the new category to the database.
-            category = form.save(commit=True)
-            print(category, category.slug)
-            # Now that the category is saved
-            # We could give a confirmation message
-            # But instead since the most recent catergory added is on the index page
-            # Then we can direct the user back to the index page.
-            return index(request)
-        else:
-            # The supplied form contained errors - just print them to the terminal.
-            print(form.errors)
-    # Will handle the bad form (or form details), new form or no form supplied cases.
-    # Render the form with error messages (if any).
-    return render(request, 'rango/add_category.html', {'form': form})
-    
+	form = CategoryForm()
+	
+	# A HTTP POST?
+	if request.method == 'POST':
+		form = CategoryForm(request.POST)
+		# Have we been provided with a valid form?
+		if form.is_valid():
+			# Save the new category to the database.
+			cat = form.save(commit=True)
+			# Now that the category is saved
+			# We could give a confirmation message
+			# But since the most recent category added is on the index page
+			# Then we can direct the user back to the index page.
+			return index(request)
+		else:
+		# The supplied form contained errors -
+		# just print them to the terminal.m})
+			print(form.errors)
+	# Will handle the bad form, new form, or no form supplied cases.
+	# Render the form with error messages (if any).
+	return render(request, 'rango/add_category.html', {'form': form})
     
 def add_page(request, category_name_slug):
     try:
@@ -153,11 +144,11 @@ def add_page(request, category_name_slug):
                 page.category = category
                 page.views = 0
                 page.save()
-                # probably better to use a redirect here.
-            return show_category(request, category_name_slug)
+               	return show_category(request, category_name_slug)
         else:
             print(form.errors)
 
     context_dict = {'form':form, 'category': category}
 
     return render(request, 'rango/add_page.html', context_dict)
+    
