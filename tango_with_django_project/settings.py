@@ -32,7 +32,6 @@ ALLOWED_HOSTS = []
 MEDIA_ROOT = MEDIA_DIR
 MEDIA_URL = '/media/'
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -57,10 +56,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'tango_with_django_project.urls'
 
-
-
-
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -80,7 +75,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'tango_with_django_project.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
@@ -91,7 +85,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -101,6 +94,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 6, }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -110,9 +104,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
+
+LOGIN_URL = '/rango/login/'
 
 LANGUAGE_CODE = 'en-us'
 
@@ -124,11 +119,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-
 
 STATICFILES_DIRS = [STATIC_DIR, ]
