@@ -13,8 +13,169 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
-#chap10
+# chap10
 from datetime import datetime
+
+#<----- ALL ABOUT COOKIE IS HERE ----->
+
+def get_server_side_cookie(request, cookie, default_val=None):
+    val = request.session.get(cookie)
+    if not val:
+        val = default_val
+    return val
+
+
+# Updated the function definition
+
+def visitor_cookie_handler(request):
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+    last_visit_cookie = get_server_side_cookie(request,
+                                               'last_visit',
+                                               str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7],
+                                        '%Y-%m-%d %H:%M:%S')
+    # If it's been more than a day since the last visit...
+    if (datetime.now() - last_visit_time).days > 0:
+        visits = visits + 1
+    # update the last visit cookie now that we have updated the count
+        request.session['last_visit'] = str(datetime.now())
+    else:
+        visits = 1
+    # set the last visit cookie
+        request.session['last_visit'] = last_visit_cookie
+    # Update/set the visits cookie
+    request.session['visits'] = visits
+
+# chapter 3
+# from django.http import HttpResponse
+
+# chapter 3
+# def index(request):
+#	return HttpResponse("Rango says hey there partner!<a href='/rango/about/'>About</a>")
+
+# chapter 4
+def index(request):
+    # context_dict = {'boldmessage': "Crunchie, creamy, cookie, candy, cupcake!"}
+
+    #1
+    request.session.set_test_cookie()
+
+    category_list = Category.objects.order_by('-likes')[:5]
+    page_list = Page.objects.order_by('-views')[:5]
+    context_dict = {'categories': category_list, 'pages': page_list}
+
+    visitor_cookie_handler(request)
+    context_dict['visits'] = request.session['visits']
+
+    #print(request.session['visits'])
+
+    response = render(request, 'rango/index.html', context=context_dict)
+
+    return response
+
+
+# chapter 3
+# def about(request):
+# return HttpResponse("Rango says here is the about page.<a href='/rango/'>Rango</a>")
+
+# chapter 4
+def about(request):
+    request.session.set_test_cookie()
+
+    if request.session.test_cookie_worked():
+        print("TEST COOKIE WORKED!")
+        request.session.delete_test_cookie()
+
+    visitor_cookie_handler(request)
+    context_dict = {'boldmessage': "Happy, smile, sweet, cheers!"}
+    context_dict['visits'] = request.session['visits']
+
+    #print(request.session['visits'])
+
+    response = render(request, 'rango/about.html', context=context_dict)
+
+    return response
+
+# chapter 6
+def show_category(request, category_name_slug):
+    context_dict = {}
+    try:
+        category = Category.objects.get(slug=category_name_slug)
+        pages = Page.objects.filter(category=category)
+        context_dict['pages'] = pages
+        context_dict['category'] = category
+    except Category.DoesNotExist:
+        context_dict['category'] = None
+        context_dict['pages'] = None
+    # Go render the response and return it to the client.
+    return render(request, 'rango/category.html', context_dict)
+
+
+# chapter 6
+def show_page(request, slug):
+    context_dict = {}
+    try:
+
+        title = Page.objects.get(slug=slug)
+        pages = Page.objects.filter(title=title)
+        context_dict['pages'] = pages
+        context_dict['title'] = title
+    except Page.DoesNotExist:
+        context_dict['title'] = None
+        context_dict['pages'] = None
+
+    # Go render the response and return it to the client.
+    return render(request, 'rango/page.html', context_dict)
+
+
+# chapter 7
+def add_category(request):
+    form = CategoryForm()
+
+    # A HTTP POST?
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        # Have we been provided with a valid form?
+        if form.is_valid():
+            # Save the new category to the database.
+            cat = form.save(commit=True)
+            return index(request)
+        else:
+            # The supplied form contained errors -
+            # just print them to the terminal.m})
+            print(form.errors)
+    # Will handle the bad form, new form, or no form supplied cases.
+    # Render the form with error messages (if any).
+    return render(request, 'rango/add_category.html', {'form': form})
+
+
+def add_page(request, category_name_slug):
+    try:
+        category = Category.objects.get(slug=category_name_slug)
+    except Category.DoesNotExist:
+        category = None
+
+    form = PageForm()
+    if request.method == 'POST':
+        form = PageForm(request.POST)
+        if form.is_valid():
+            if category:
+                page = form.save(commit=False)
+                page.category = category
+                page.views = 0
+                page.save()
+                return show_category(request, category_name_slug)
+        else:
+            print(form.errors)
+
+    context_dict = {'form': form, 'category': category}
+
+    return render(request, 'rango/add_page.html', context_dict)
+
+
+
+
+
 
 # Use the login_required() decorator to ensure only those logged in can
 # access the view.
@@ -123,166 +284,3 @@ def register(request):
                   {'user_form': user_form,
                    'profile_form': profile_form,
                    'registered': registered})
-
-
-# chapter 3
-# from django.http import HttpResponse
-
-# chapter 3
-# def index(request):
-#	return HttpResponse("Rango says hey there partner!<a href='/rango/about/'>About</a>")
-
-# chapter 4
-def index(request):
-    category_list = Category.objects.order_by('-likes')[:5]
-    page_list = Page.objects.order_by('-views')[:5]
-    context_dict = {'categories': category_list, 'pages': page_list}
-
-    # Obtain our Response object early so we can add cookie information.
-    response = render(request, 'rango/index.html', context_dict)
-
-    # Call the helper function to handle the cookies
-    visitor_cookie_handler(request, response)
-
-    # Return response back to the user, updating any cookies that need changed.
-    return response
-    # Construct a dictionary to pass to the template engine as its context.
-    # Note the key boldmessage is the same as {{ boldmessage }} in the template!
-    #	context_dict={'boldmessage': "Crunchy, creamy, cookie, candy, cupcake!"}
-    # Return a rendered response to send to the client.
-    # We make use of the shortcut function to make our lives easier.
-    # Note that the first parameter is the template we wish to use.
-    #	return render(request, 'rango/index.html', context=context_dict)
-
-    # chapter 6
-    # Query the database for a list of ALL categories currently stored.
-    # Order the categories by no. likes in descending order.
-    # Retrieve the top 5 only - or all if less than 5.
-    # Place the list in our context_dict dictionary
-    # that will be passed to the template engine.
-    context_dict = {}
-    request.session.set_test_cookie()
-    category_list = Category.objects.order_by('-likes')[:5]
-
-    # Render the response and send it back!
-
-    page_list = Page.objects.order_by('-views')[:5]
-    context_dict = {'categories': category_list, 'pages': page_list}
-    return render(request, 'rango/index.html', context_dict)
-
-
-# chapter 3
-# def about(request):
-# return HttpResponse("Rango says here is the about page.<a href='/rango/'>Rango</a>")
-
-# chapter 4
-def about(request):
-    if request.session.test_cookie_worked():
-        print("TEST COOKIE WORKED!")
-        request.session.delete_test_cookie()
-    # Construct a dictionary to pass to the template engine as its context.
-    # Note the key boldmessage is the same as {{ boldmessage }} in the template!
-    context_dict = {'boldmessage': "Happy, smile, sweet, cheers!"}
-    # Return a rendered response to send to the client.
-    # We make use of the shortcut function to make our lives easier.
-    # Note that the first parameter is the template we wish to use.
-    return render(request, 'rango/about.html', context=context_dict)
-
-
-# chapter 6
-def show_category(request, category_name_slug):
-    context_dict = {}
-    try:
-        category = Category.objects.get(slug=category_name_slug)
-        pages = Page.objects.filter(category=category)
-        context_dict['pages'] = pages
-        context_dict['category'] = category
-    except Category.DoesNotExist:
-        context_dict['category'] = None
-        context_dict['pages'] = None
-    # Go render the response and return it to the client.
-    return render(request, 'rango/category.html', context_dict)
-
-
-# chapter 6
-def show_page(request, slug):
-    context_dict = {}
-    try:
-
-        title = Page.objects.get(slug=slug)
-        pages = Page.objects.filter(title=title)
-        context_dict['pages'] = pages
-        context_dict['title'] = title
-    except Page.DoesNotExist:
-        context_dict['title'] = None
-        context_dict['pages'] = None
-
-    # Go render the response and return it to the client.
-    return render(request, 'rango/page.html', context_dict)
-
-
-# chapter 7
-def add_category(request):
-    form = CategoryForm()
-
-    # A HTTP POST?
-    if request.method == 'POST':
-        form = CategoryForm(request.POST)
-        # Have we been provided with a valid form?
-        if form.is_valid():
-            # Save the new category to the database.
-            cat = form.save(commit=True)
-            return index(request)
-        else:
-            # The supplied form contained errors -
-            # just print them to the terminal.m})
-            print(form.errors)
-    # Will handle the bad form, new form, or no form supplied cases.
-    # Render the form with error messages (if any).
-    return render(request, 'rango/add_category.html', {'form': form})
-
-
-def add_page(request, category_name_slug):
-    try:
-        category = Category.objects.get(slug=category_name_slug)
-    except Category.DoesNotExist:
-        category = None
-
-    form = PageForm()
-    if request.method == 'POST':
-        form = PageForm(request.POST)
-        if form.is_valid():
-            if category:
-                page = form.save(commit=False)
-                page.category = category
-                page.views = 0
-                page.save()
-                return show_category(request, category_name_slug)
-        else:
-            print(form.errors)
-
-    context_dict = {'form': form, 'category': category}
-
-    return render(request, 'rango/add_page.html', context_dict)
-
-
-def visitor_cookie_handler(request, response):
-    # Get the number of visits to the site.
-    # We use the COOKIES.get() function to obtain the visits cookie.
-    # If the cookie exists, the value returned is casted to an integer.
-    # If the cookie doesn't exist, then the default value of 1 is used.
-    visits = int(request.COOKIES.get('visits', '1'))
-    last_visit_cookie = request.COOKIES.get('last_visit', str(datetime.now()))
-    last_visit_time = datetime.strptime(last_visit_cookie[:-7],
-                                        '%Y-%m-%d %H:%M:%S')
-    # If it's been more than a day since the last visit...
-    if (datetime.now() - last_visit_time).days > 0:
-        visits = visits + 1
-        # Update the last visit cookie now that we have updated the count
-        response.set_cookie('last_visit', str(datetime.now()))
-    else:
-        visits = 1
-        # Set the last visit cookie
-        response.set_cookie('last_visit', last_visit_cookie)
-    # Update/set the visits cookie
-    response.set_cookie('visits', visits)
