@@ -5,6 +5,7 @@ Add Page
 {% endblock %}
 
 {% block body_block %}
+{% if user.is_authenticated %}
 <div>
     {% if category %}
 
@@ -30,6 +31,9 @@ Add Page
     The specified category does not exist!
     {% endif%}
 
+{% else %}
+Please Sign In!
+{% endif %}
 
 </div>
 
